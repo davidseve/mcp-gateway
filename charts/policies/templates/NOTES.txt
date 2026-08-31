@@ -1,0 +1,14 @@
+{{- if .Values.authPolicy.enabled }}
+Auth policy deployed: {{ .Values.authPolicy.name }}
+{{- end }}
+{{- if .Values.rateLimitPolicy.enabled }}
+Rate limit policy deployed: {{ .Values.rateLimitPolicy.name }}
+  Limit: {{ .Values.rateLimitPolicy.limits.requestsPerMinute }} requests/min
+{{- end }}
+{{- if not (or .Values.authPolicy.enabled .Values.rateLimitPolicy.enabled) }}
+No policies enabled. Set authPolicy.enabled=true or rateLimitPolicy.enabled=true.
+{{- end }}
+
+Check status:
+  oc get authpolicy -n {{ .Release.Namespace }}
+  oc get ratelimitpolicy -n {{ .Release.Namespace }}

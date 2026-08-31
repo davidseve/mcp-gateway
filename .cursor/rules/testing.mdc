@@ -1,0 +1,14 @@
+---
+description: Testing conventions for this project
+globs: "**/tests/**"
+alwaysApply: false
+---
+
+# Testing Conventions
+
+- Tests must be idempotent and re-runnable after cluster reinstall
+- Use pytest fixtures from `conftest.py` for URLs and namespaces
+- Set reasonable timeouts (30s for API calls, 120s for deploy waits)
+- Test both positive and negative cases (e.g., auth: valid key, no key, wrong key)
+- Clean up test artifacts if created
+- Use `GATEWAY_HOST` and `K8S_MCP_HOST` env vars to override defaults

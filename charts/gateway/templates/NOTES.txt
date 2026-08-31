@@ -1,0 +1,9 @@
+MCP Gateway deployed.
+
+Gateway:  {{ .Values.gateway.name }}
+MCP Listener: port {{ .Values.gateway.listeners.mcp.port }}
+
+Check status:
+  oc get gateway {{ .Values.gateway.name }} -n {{ .Release.Namespace }}
+  oc get mcpgatewayextension -n {{ .Release.Namespace }}
+  oc get pods -n {{ .Release.Namespace }}

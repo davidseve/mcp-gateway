@@ -1,0 +1,12 @@
+.logs/
+.agent-status/
+*.swp
+*.swo
+*~
+.DS_Store
+charts/*/charts/
+charts/**/Chart.lock
+__pycache__/
+*.pyc
+.pytest_cache/
+.env

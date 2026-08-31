@@ -1,0 +1,5 @@
+apiVersion: v2
+name: connectivity-link-operators
+description: Install Red Hat Connectivity Link operator via OLM
+version: 0.1.0
+type: application

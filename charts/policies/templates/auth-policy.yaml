@@ -1,0 +1,23 @@
+{{- if .Values.authPolicy.enabled }}
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: {{ .Values.authPolicy.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ .Values.gateway.name }}
+    namespace: {{ .Values.gateway.namespace }}
+  rules:
+    authentication:
+      api-key:
+        apiKey:
+          selector:
+            matchLabels:
+              {{ .Values.authPolicy.apiKey.secretLabel }}
+        credentials:
+          authorizationHeader:
+            prefix: Bearer
+{{- end }}

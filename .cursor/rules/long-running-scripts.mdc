@@ -1,0 +1,13 @@
+---
+description: Long-running scripts pattern for deploys and validates
+alwaysApply: true
+---
+
+# Long-Running Scripts
+
+For deploys and validates >30s, use `scripts/lib/agent-run.sh`:
+- `make deploy-quiet` wraps deploy via agent-run.sh
+- `make validate-smoke` runs quick health checks
+- Status in `.agent-status/`, logs in `.logs/`
+- Look for `AGENT_SCRIPT_DONE` sentinel in output
+- Do NOT poll full terminal output for long deploys

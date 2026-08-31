@@ -1,0 +1,16 @@
+gateway:
+  name: mcp-gateway
+  namespace: gateway-system
+
+authPolicy:
+  enabled: false
+  name: mcp-gateway-auth
+  apiKey:
+    secretName: mcp-api-keys
+    secretLabel: "mcp.kuadrant.io/secret=true"
+
+rateLimitPolicy:
+  enabled: false
+  name: mcp-gateway-ratelimit
+  limits:
+    requestsPerMinute: 60

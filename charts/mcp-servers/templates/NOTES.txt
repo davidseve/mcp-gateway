@@ -1,0 +1,10 @@
+MCP servers registered in gateway.
+
+Registered servers:
+{{- range .Values.servers }}
+  - {{ .name }} (prefix: {{ .prefix }})
+{{- end }}
+
+Check status:
+  oc get mcpserverregistration -n {{ .Release.Namespace }}
+  oc get httproute -A

@@ -1,0 +1,46 @@
+---
+description: MCP Gateway CRD patterns and conventions
+globs: "**/charts/**/*.yaml,**/charts/**/*.tpl,**/templates/**/*.yaml"
+alwaysApply: false
+---
+
+# MCP Gateway CRD Conventions
+
+## API Versions (v1 — promoted from v1alpha1 in 0.8)
+
+```yaml
+apiVersion: mcp.kuadrant.io/v1
+kind: MCPGatewayExtension
+```
+
+```yaml
+apiVersion: mcp.kuadrant.io/v1
+kind: MCPServerRegistration
+```
+
+## MCPGatewayExtension must target a Gateway
+
+```yaml
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ .Values.gateway.name }}
+    namespace: {{ .Values.gateway.namespace }}
+    sectionName: mcp
+```
+
+## MCPServerRegistration references an HTTPRoute
+
+```yaml
+spec:
+  prefix: "k8s_"
+  path: "/mcp"
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ route-name }}
+    namespace: {{ route-namespace }}
+```
+
+## Field naming: use `prefix` (not `toolPrefix` — renamed in RHCL 1.4)

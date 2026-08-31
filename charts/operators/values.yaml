@@ -1,0 +1,9 @@
+operator:
+  name: rhcl-operator
+  channel: stable
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
+
+operatorGroup:
+  name: connectivity-link-og

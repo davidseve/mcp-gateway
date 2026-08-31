@@ -1,0 +1,16 @@
+global:
+  clusterDomain: CHANGE_ME
+
+gateway:
+  name: mcp-gateway
+  namespace: gateway-system
+  sectionName: mcp
+
+servers:
+  - name: kubernetes-mcp-server
+    prefix: "k8s_"
+    path: "/mcp"
+    service:
+      name: kubernetes-mcp-server
+      namespace: kubernetes-mcp-server
+      port: 8080

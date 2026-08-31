@@ -1,0 +1,18 @@
+{{- range .Values.servers }}
+---
+apiVersion: mcp.kuadrant.io/v1
+kind: MCPServerRegistration
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mcp-servers.labels" $ | nindent 4 }}
+spec:
+  prefix: {{ .prefix | quote }}
+  path: {{ .path | default "/mcp" | quote }}
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ .name }}-route
+    namespace: {{ .service.namespace }}
+{{- end }}

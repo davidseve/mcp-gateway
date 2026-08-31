@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(oc get *)",
+      "Bash(oc describe *)",
+      "Bash(oc logs *)",
+      "Bash(oc exec *)",
+      "Bash(oc apply *)",
+      "Bash(oc delete *)",
+      "Bash(oc create *)",
+      "Bash(oc whoami *)",
+      "Bash(oc api-resources *)",
+      "Bash(oc rollout *)",
+      "Bash(oc port-forward *)",
+      "Bash(helm install *)",
+      "Bash(helm upgrade *)",
+      "Bash(helm uninstall *)",
+      "Bash(helm template *)",
+      "Bash(helm lint *)",
+      "Bash(helm dependency *)",
+      "Bash(make *)",
+      "Bash(pytest *)",
+      "Bash(curl *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Edit",
+      "Write"
+    ]
+  }
+}

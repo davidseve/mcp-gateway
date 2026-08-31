@@ -1,0 +1,16 @@
+global:
+  clusterDomain: CHANGE_ME  # e.g. apps.cluster.example.com
+
+gateway:
+  name: mcp-gateway
+  listeners:
+    mcp:
+      port: 8443
+      protocol: HTTPS
+    http:
+      port: 8080
+      protocol: HTTP
+
+mcpGatewayExtension:
+  name: mcp-gateway
+  httpRouteManagement: Enabled

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: kubernetes-mcp-server
+description: Wrapper chart for upstream kubernetes-mcp-server on OpenShift
+version: 0.1.0
+type: application
+dependencies:
+  - name: kubernetes-mcp-server
+    version: "0.1.0"
+    repository: "oci://ghcr.io/containers/charts"

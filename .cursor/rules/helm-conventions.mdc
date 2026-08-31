@@ -1,0 +1,23 @@
+---
+description: Helm chart conventions for this project
+globs: "**/charts/**/*.yaml,**/charts/**/*.tpl,**/templates/**/*.yaml"
+alwaysApply: false
+---
+
+# Helm Conventions
+
+- Use `_helpers.tpl` for reusable template logic (labels, names, selectors)
+- All values have sensible defaults for dev/local testing
+- No hardcoded namespaces — use `{{ .Release.Namespace }}`
+- No hardcoded cluster domains — use `CHANGE_ME` or derive via values
+- 2-space YAML indentation
+- Gate optional resources with `{{- if .Values.<feature>.enabled }}`
+- Comments for non-obvious values in `values.yaml`
+- Use `{{ .Values.global.clusterDomain }}` for cross-chart domain references
+
+## Validate before committing
+
+```bash
+helm template charts/<chart-name>
+helm lint charts/<chart-name>
+```

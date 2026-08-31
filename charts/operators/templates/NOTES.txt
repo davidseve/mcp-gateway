@@ -1,0 +1,5 @@
+Connectivity Link operator installed.
+
+Check status:
+  oc get csv -n {{ .Release.Namespace }}
+  oc get pods -n {{ .Release.Namespace }}

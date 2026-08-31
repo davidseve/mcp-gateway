@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mcp-server-registrations
+description: Register MCP servers in the gateway (HTTPRoute + MCPServerRegistration)
+version: 0.1.0
+type: application

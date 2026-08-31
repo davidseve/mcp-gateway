@@ -1,0 +1,18 @@
+kubernetes-mcp-server:
+  openshift: true
+
+  ingress:
+    enabled: true
+    host: ""  # Set via --set ingress.host=... or Makefile
+
+  rbac:
+    extraClusterRoleBindings:
+      - name: use-view-role
+        roleRef:
+          name: view
+          external: true
+
+  # Toolsets to enable (comma-separated)
+  # Available: core, helm, netobserv
+  config:
+    toolsets: "core,helm"
