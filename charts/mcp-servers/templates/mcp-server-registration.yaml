@@ -1,6 +1,6 @@
 {{- range .Values.servers }}
 ---
-apiVersion: mcp.kuadrant.io/v1
+apiVersion: mcp.kuadrant.io/v1alpha1
 kind: MCPServerRegistration
 metadata:
   name: {{ .name }}
@@ -14,5 +14,4 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: {{ .name }}-route
-    namespace: {{ .service.namespace }}
 {{- end }}

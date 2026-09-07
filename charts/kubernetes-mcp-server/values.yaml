@@ -12,7 +12,9 @@ kubernetes-mcp-server:
           name: view
           external: true
 
-  # Toolsets to enable (comma-separated)
-  # Available: core, helm, netobserv
+  # Toolsets to enable (TOML array format)
+  # Available: core, config, helm, netobserv, tekton, kubevirt, kiali, kcp
   config:
-    toolsets: "core,helm"
+    toolsets:
+      - core
+      - helm

@@ -33,8 +33,11 @@ class TestKubernetesMcpServerDirect:
 class TestGatewayHealth:
     """Test MCP Gateway is running and reachable."""
 
-    def test_gateway_endpoint_reachable(self, gateway_url):
+    def test_gateway_endpoint_reachable(self, gateway_url, gateway_host_header):
         """The gateway endpoint responds (may return 4xx without auth, that's OK)."""
+        headers = {"Content-Type": "application/json"}
+        if gateway_host_header:
+            headers["Host"] = gateway_host_header
         try:
             resp = requests.post(
                 f"{gateway_url}/mcp",
@@ -48,7 +51,7 @@ class TestGatewayHealth:
                         "clientInfo": {"name": "test", "version": "0.1.0"},
                     },
                 },
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 timeout=30,
                 verify=False,
             )

@@ -4,17 +4,19 @@ metadata:
   name: {{ .Values.gateway.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  gatewayClassName: istio
+  gatewayClassName: {{ .Values.gateway.gatewayClassName }}
   listeners:
     - name: mcp
+      hostname: {{ .Values.gateway.listeners.mcp.hostname }}
       port: {{ .Values.gateway.listeners.mcp.port }}
       protocol: {{ .Values.gateway.listeners.mcp.protocol }}
       allowedRoutes:
         namespaces:
           from: All
-    - name: http
-      port: {{ .Values.gateway.listeners.http.port }}
-      protocol: {{ .Values.gateway.listeners.http.protocol }}
+    - name: mcps
+      hostname: "*.mcp.local"
+      port: {{ .Values.gateway.listeners.mcps.port }}
+      protocol: {{ .Values.gateway.listeners.mcps.protocol }}
       allowedRoutes:
         namespaces:
           from: All

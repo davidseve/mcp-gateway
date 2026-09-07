@@ -1,0 +1,22 @@
+{{- if .Values.mcpGatewayOperator.enabled }}
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ .Values.mcpGatewayOperator.name }}
+  namespace: {{ .Values.mcpGatewayOperator.namespace }}
+spec:
+  channel: {{ .Values.mcpGatewayOperator.channel }}
+  name: {{ .Values.mcpGatewayOperator.name }}
+  source: {{ .Values.mcpGatewayOperator.source }}
+  sourceNamespace: {{ .Values.mcpGatewayOperator.sourceNamespace }}
+  installPlanApproval: {{ .Values.mcpGatewayOperator.installPlanApproval }}
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: {{ .Values.mcpGatewayOperator.name }}
+  namespace: {{ .Values.mcpGatewayOperator.namespace }}
+spec:
+  targetNamespaces:
+    - {{ .Values.mcpGatewayOperator.namespace }}
+{{- end }}

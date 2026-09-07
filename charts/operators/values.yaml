@@ -7,3 +7,17 @@ operator:
 
 operatorGroup:
   name: connectivity-link-og
+
+mcpGatewayOperator:
+  enabled: true
+  name: mcp-gateway
+  namespace: mcp-gateway
+  channel: preview
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic
+
+gatewayClass:
+  enabled: true
+  name: openshift-default
+  controllerName: openshift.io/gateway-controller/v1

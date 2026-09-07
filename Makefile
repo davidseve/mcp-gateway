@@ -13,6 +13,10 @@ K8S_MCP_NS      ?= kubernetes-mcp-server
 MCP_SERVERS_NS  ?= gateway-system
 POLICIES_NS     ?= gateway-system
 
+# Gateway ELB address (for Gateway API-based gateways)
+GATEWAY_ELB    ?= $(shell $(OC) get gateway mcp-gateway -n $(GATEWAY_NS) -o jsonpath='{.status.addresses[0].value}' 2>/dev/null)
+GATEWAY_URL    ?= http://$(GATEWAY_ELB):8080
+
 # ─── Help ───────────────────────────────────────────────────────────────────────
 
 help: ## Show this help
@@ -30,13 +34,14 @@ deploy-k8s-mcp-server: ## Deploy kubernetes-mcp-server backend
 	$(HELM) dependency update charts/kubernetes-mcp-server
 	$(HELM) upgrade --install kubernetes-mcp-server charts/kubernetes-mcp-server \
 		--namespace $(K8S_MCP_NS) --create-namespace \
-		--set ingress.host=kubernetes-mcp-server.$(CLUSTER_DOMAIN) \
+		--set kubernetes-mcp-server.ingress.host=kubernetes-mcp-server.$(CLUSTER_DOMAIN) \
 		--wait --timeout 5m
 
 deploy-gateway: ## Deploy Gateway + MCPGatewayExtension
 	$(HELM) upgrade --install mcp-gateway charts/gateway \
 		--namespace $(GATEWAY_NS) --create-namespace \
 		--set global.clusterDomain=$(CLUSTER_DOMAIN) \
+		--set gateway.listeners.mcp.hostname=mcp-gateway.$(CLUSTER_DOMAIN) \
 		--wait --timeout 5m
 
 deploy-mcp-servers: ## Register MCP servers in the gateway
@@ -76,6 +81,7 @@ undeploy-all: undeploy-policies undeploy-mcp-servers undeploy-gateway undeploy-k
 
 test: ## Run all tests
 	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
+		GATEWAY_URL=$(GATEWAY_URL) \
 		$(PYTEST) tests/ -v
 
 test-k8s-mcp-direct: ## Test kubernetes-mcp-server directly (bypass gateway)
@@ -84,10 +90,12 @@ test-k8s-mcp-direct: ## Test kubernetes-mcp-server directly (bypass gateway)
 
 test-tools-list: ## Test tools/list through the gateway
 	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
+		GATEWAY_URL=$(GATEWAY_URL) \
 		$(PYTEST) tests/test_mcp_tools_list.py -v
 
 test-auth: ## Test auth policies
 	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
+		GATEWAY_URL=$(GATEWAY_URL) \
 		$(PYTEST) tests/test_auth_policies.py -v
 
 # ─── Lint ───────────────────────────────────────────────────────────────────────

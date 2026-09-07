@@ -1,0 +1,19 @@
+{{- range .Values.servers }}
+{{- if ne .service.namespace $.Release.Namespace }}
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-gateway-to-{{ .name }}
+  namespace: {{ .service.namespace }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: {{ $.Release.Namespace }}
+  to:
+    - group: ""
+      kind: Service
+      name: {{ .service.name }}
+{{- end }}
+{{- end }}

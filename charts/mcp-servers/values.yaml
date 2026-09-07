@@ -4,7 +4,7 @@ global:
 gateway:
   name: mcp-gateway
   namespace: gateway-system
-  sectionName: mcp
+  sectionName: mcps
 
 servers:
   - name: kubernetes-mcp-server

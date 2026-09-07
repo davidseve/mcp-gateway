@@ -3,12 +3,14 @@ global:
 
 gateway:
   name: mcp-gateway
+  gatewayClassName: openshift-default
   listeners:
     mcp:
-      port: 8443
-      protocol: HTTPS
-    http:
+      hostname: mcp-gateway.CHANGE_ME
       port: 8080
+      protocol: HTTP
+    mcps:
+      port: 8443
       protocol: HTTP
 
 mcpGatewayExtension:

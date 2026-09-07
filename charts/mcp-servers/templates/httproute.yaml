@@ -4,10 +4,12 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: {{ .name }}-route
-  namespace: {{ .service.namespace }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "mcp-servers.labels" $ | nindent 4 }}
 spec:
+  hostnames:
+    - {{ .name }}.mcp.local
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
@@ -21,5 +23,6 @@ spec:
             value: {{ .path | default "/mcp" }}
       backendRefs:
         - name: {{ .service.name }}
+          namespace: {{ .service.namespace }}
           port: {{ .service.port }}
 {{- end }}
