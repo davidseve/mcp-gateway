@@ -1,4 +1,5 @@
 import os
+import socket
 import subprocess
 import pytest
 
@@ -60,18 +61,41 @@ def gateway_url(cluster_domain, gateway_namespace):
 
 
 @pytest.fixture(scope="session")
-def gateway_host_header(cluster_domain):
-    """Host header to send when accessing gateway via ELB.
-    
-    Returns the expected hostname for the mcp listener, or None if
-    not needed (direct hostname access).
+def gateway_host_header(cluster_domain, gateway_url):
+    """Host header to send when accessing gateway via ELB hostname (HTTP only).
+
+    For HTTPS, SNI uses the URL hostname; Host header override is not needed
+    when gateway_url already uses the mcp listener hostname.
     """
-    if os.environ.get("GATEWAY_URL"):
-        return os.environ.get(
-            "GATEWAY_HOST_HEADER",
-            f"mcp-gateway.{cluster_domain}",
-        )
+    if os.environ.get("GATEWAY_HOST_HEADER"):
+        return os.environ.get("GATEWAY_HOST_HEADER")
+    if "amazonaws.com" in gateway_url and gateway_url.startswith("http://"):
+        return f"mcp-gateway.{cluster_domain}"
     return None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _gateway_dns_resolve(cluster_domain):
+    """Resolve mcp hostname to Gateway ELB IP when public DNS is not updated yet."""
+    resolve_ip = os.environ.get("GATEWAY_RESOLVE_IP", "").strip()
+    if not resolve_ip:
+        yield
+        return
+
+    hostname = os.environ.get(
+        "GATEWAY_HOST_HEADER",
+        f"mcp-gateway.{cluster_domain}",
+    )
+    original_getaddrinfo = socket.getaddrinfo
+
+    def patched_getaddrinfo(host, *args, **kwargs):
+        if host == hostname:
+            host = resolve_ip
+        return original_getaddrinfo(host, *args, **kwargs)
+
+    socket.getaddrinfo = patched_getaddrinfo
+    yield
+    socket.getaddrinfo = original_getaddrinfo
 
 
 @pytest.fixture(scope="session")

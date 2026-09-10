@@ -9,15 +9,22 @@ spec:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: {{ .Values.gateway.name }}
-    namespace: {{ .Values.gateway.namespace }}
-  rules:
-    authentication:
-      api-key:
-        apiKey:
-          selector:
-            matchLabels:
-              {{ .Values.authPolicy.apiKey.secretLabel }}
-        credentials:
-          authorizationHeader:
-            prefix: Bearer
+  defaults:
+    when:
+      - predicate: "!request.path.contains('/.well-known')"
+    rules:
+      authentication:
+        {{- if .Values.authPolicy.apiKey.enabled }}
+        api-key:
+          apiKey:
+            selector:
+              matchLabels:
+                {{- range $label := splitList "," .Values.authPolicy.apiKey.secretLabels }}
+                {{- $parts := splitList "=" $label }}
+                {{ index $parts 0 }}: {{ index $parts 1 | quote }}
+                {{- end }}
+          credentials:
+            authorizationHeader:
+              prefix: Bearer
+        {{- end }}
 {{- end }}

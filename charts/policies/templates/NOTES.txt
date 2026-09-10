@@ -1,9 +1,31 @@
 {{- if .Values.authPolicy.enabled }}
 Auth policy deployed: {{ .Values.authPolicy.name }}
+  API key auth: {{ .Values.authPolicy.apiKey.enabled }}
+  Secrets label: {{ .Values.authPolicy.apiKey.secretLabel }}
+  Skips: /.well-known/* (OAuth discovery prep)
+
+  IMPORTANT: Create at least one API key Secret before auth will work:
+    oc create secret generic my-mcp-key -n {{ .Release.Namespace }} \
+      --from-literal=api_key=YOUR_KEY
+    oc label secret my-mcp-key -n {{ .Release.Namespace }} \
+      mcp.kuadrant.io/secret=true \
+      authorino.kuadrant.io/managed-by=authorino
 {{- end }}
 {{- if .Values.rateLimitPolicy.enabled }}
 Rate limit policy deployed: {{ .Values.rateLimitPolicy.name }}
-  Limit: {{ .Values.rateLimitPolicy.limits.requestsPerMinute }} requests/min
+  Global: {{ .Values.rateLimitPolicy.limits.requestsPerMinute }} requests/min
+  {{- if .Values.rateLimitPolicy.limits.burst.enabled }}
+  Burst:  {{ .Values.rateLimitPolicy.limits.burst.requestsPerSecond }} requests/s
+  {{- end }}
+  {{- if .Values.rateLimitPolicy.limits.perIdentity.enabled }}
+  Per-identity: {{ .Values.rateLimitPolicy.limits.perIdentity.requestsPerMinute }} requests/min (by auth.identity.username)
+  {{- end }}
+{{- end }}
+{{- if .Values.virtualServers }}
+Virtual servers:
+  {{- range .Values.virtualServers }}
+  - {{ .name }}: {{ .tools | len }} tools (header: X-Mcp-Virtualserver: {{ $.Release.Namespace }}/{{ .name }})
+  {{- end }}
 {{- end }}
 {{- if not (or .Values.authPolicy.enabled .Values.rateLimitPolicy.enabled) }}
 No policies enabled. Set authPolicy.enabled=true or rateLimitPolicy.enabled=true.
@@ -12,3 +34,6 @@ No policies enabled. Set authPolicy.enabled=true or rateLimitPolicy.enabled=true
 Check status:
   oc get authpolicy -n {{ .Release.Namespace }}
   oc get ratelimitpolicy -n {{ .Release.Namespace }}
+  {{- if .Values.virtualServers }}
+  oc get mcpvirtualserver -n {{ .Release.Namespace }}
+  {{- end }}

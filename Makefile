@@ -13,9 +13,18 @@ K8S_MCP_NS      ?= kubernetes-mcp-server
 MCP_SERVERS_NS  ?= gateway-system
 POLICIES_NS     ?= gateway-system
 
-# Gateway ELB address (for Gateway API-based gateways)
-GATEWAY_ELB    ?= $(shell $(OC) get gateway mcp-gateway -n $(GATEWAY_NS) -o jsonpath='{.status.addresses[0].value}' 2>/dev/null)
-GATEWAY_URL    ?= http://$(GATEWAY_ELB):8080
+# Gateway access
+# route (default): OpenShift Route + ClusterIP — DNS via *.apps wildcard (MaaS pattern)
+# loadbalancer: dedicated Gateway ELB — Phase 3.2 (DNSPolicy / manual CNAME)
+GATEWAY_EXPOSURE       ?= route
+GATEWAY_TLS            ?= false
+GATEWAY_TLS_SECRET     ?= $(if $(filter route,$(GATEWAY_EXPOSURE)),ingress-certs,mcp-gateway-tls)
+GATEWAY_MCP_HOST       ?= mcp-gateway.$(CLUSTER_DOMAIN)
+GATEWAY_ELB            ?= $(shell $(OC) get gateway mcp-gateway -n $(GATEWAY_NS) -o jsonpath='{.status.addresses[0].value}' 2>/dev/null)
+GATEWAY_RESOLVE_IP     ?= $(if $(filter loadbalancer,$(GATEWAY_EXPOSURE)),$(shell dig +short $(GATEWAY_ELB) 2>/dev/null | head -1),)
+GATEWAY_URL            ?= $(if $(filter route,$(GATEWAY_EXPOSURE)),https://$(GATEWAY_MCP_HOST),$(if $(filter true,$(GATEWAY_TLS)),https://$(GATEWAY_MCP_HOST),http://$(GATEWAY_ELB):8080))
+GATEWAY_TEST_ENV       = GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
+	GATEWAY_URL=$(GATEWAY_URL) GATEWAY_RESOLVE_IP=$(GATEWAY_RESOLVE_IP)
 
 # ─── Help ───────────────────────────────────────────────────────────────────────
 
@@ -37,12 +46,23 @@ deploy-k8s-mcp-server: ## Deploy kubernetes-mcp-server backend
 		--set kubernetes-mcp-server.ingress.host=kubernetes-mcp-server.$(CLUSTER_DOMAIN) \
 		--wait --timeout 5m
 
-deploy-gateway: ## Deploy Gateway + MCPGatewayExtension
+deploy-gateway: ## Deploy Gateway + MCPGatewayExtension (GATEWAY_EXPOSURE=route|loadbalancer)
+	$(if $(filter route,$(GATEWAY_EXPOSURE)),$(MAKE) sync-wildcard-tls,)
 	$(HELM) upgrade --install mcp-gateway charts/gateway \
 		--namespace $(GATEWAY_NS) --create-namespace \
 		--set global.clusterDomain=$(CLUSTER_DOMAIN) \
-		--set gateway.listeners.mcp.hostname=mcp-gateway.$(CLUSTER_DOMAIN) \
+		--set exposure.mode=$(GATEWAY_EXPOSURE) \
+		--set gateway.listeners.mcp.hostname=$(GATEWAY_MCP_HOST) \
+		--set gateway.listeners.mcp.tls.enabled=$(if $(filter route,$(GATEWAY_EXPOSURE)),true,$(GATEWAY_TLS)) \
+		--set gateway.listeners.mcp.tls.certificateSecret=$(GATEWAY_TLS_SECRET) \
 		--wait --timeout 5m
+
+sync-wildcard-tls: ## Copy ingress wildcard cert to gateway namespace (route exposure)
+	@echo "Syncing $(GATEWAY_TLS_SECRET) from openshift-ingress to $(GATEWAY_NS)..."
+	@$(OC) get secret $(GATEWAY_TLS_SECRET) -n openshift-ingress -o json | \
+		python3 -c "import sys,json; s=json.load(sys.stdin); m=s['metadata']; \
+		[m.pop(k,None) for k in ('uid','resourceVersion','creationTimestamp','ownerReferences','managedFields')]; \
+		m['namespace']='$(GATEWAY_NS)'; print(json.dumps(s))" | $(OC) apply -f -
 
 deploy-mcp-servers: ## Register MCP servers in the gateway
 	$(HELM) upgrade --install mcp-server-registrations charts/mcp-servers \
@@ -50,10 +70,27 @@ deploy-mcp-servers: ## Register MCP servers in the gateway
 		--set global.clusterDomain=$(CLUSTER_DOMAIN) \
 		--wait --timeout 3m
 
-deploy-policies: ## Deploy AuthPolicy + RateLimitPolicy
+deploy-policies: ## Deploy AuthPolicy + RateLimitPolicy (enabled by default)
 	$(HELM) upgrade --install mcp-policies charts/policies \
 		--namespace $(POLICIES_NS) \
 		--wait --timeout 3m
+
+create-api-key: ## Create an API key Secret for AuthPolicy (MCP_API_KEY_NAME=name MCP_API_KEY_VALUE=key)
+	@if [ -z "$(MCP_API_KEY_VALUE)" ]; then \
+		echo "Usage: make create-api-key MCP_API_KEY_VALUE=your-secret-key [MCP_API_KEY_NAME=my-key]"; \
+		exit 1; \
+	fi
+	$(OC) create secret generic $(or $(MCP_API_KEY_NAME),mcp-api-key) \
+		-n $(OPERATOR_NS) \
+		--from-literal=api_key=$(MCP_API_KEY_VALUE) \
+		--dry-run=client -o yaml | \
+		$(OC) apply -f -
+	$(OC) label secret $(or $(MCP_API_KEY_NAME),mcp-api-key) \
+		-n $(OPERATOR_NS) \
+		mcp.kuadrant.io/secret=true \
+		authorino.kuadrant.io/managed-by=authorino \
+		--overwrite
+	@echo "API key created in namespace $(OPERATOR_NS) (Authorino watches Secrets here)"
 
 deploy-all: deploy-operators deploy-k8s-mcp-server deploy-gateway deploy-mcp-servers ## Deploy full stack (no policies)
 	@echo "Full stack deployed. Run 'make deploy-policies' to add auth/rate-limit."
@@ -80,23 +117,20 @@ undeploy-all: undeploy-policies undeploy-mcp-servers undeploy-gateway undeploy-k
 # ─── Test ───────────────────────────────────────────────────────────────────────
 
 test: ## Run all tests
-	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
-		GATEWAY_URL=$(GATEWAY_URL) \
-		$(PYTEST) tests/ -v
+	$(GATEWAY_TEST_ENV) $(PYTEST) tests/ -v
 
 test-k8s-mcp-direct: ## Test kubernetes-mcp-server directly (bypass gateway)
 	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
 		$(PYTEST) tests/test_gateway_health.py -v -k "k8s_mcp"
 
 test-tools-list: ## Test tools/list through the gateway
-	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
-		GATEWAY_URL=$(GATEWAY_URL) \
-		$(PYTEST) tests/test_mcp_tools_list.py -v
+	$(GATEWAY_TEST_ENV) $(PYTEST) tests/test_mcp_tools_list.py -v
 
 test-auth: ## Test auth policies
-	GATEWAY_NS=$(GATEWAY_NS) K8S_MCP_NS=$(K8S_MCP_NS) \
-		GATEWAY_URL=$(GATEWAY_URL) \
-		$(PYTEST) tests/test_auth_policies.py -v
+	$(GATEWAY_TEST_ENV) $(PYTEST) tests/test_auth_policies.py -v
+
+test-ratelimit: ## Test rate limiting policies
+	$(GATEWAY_TEST_ENV) $(PYTEST) tests/test_rate_limit.py -v
 
 # ─── Lint ───────────────────────────────────────────────────────────────────────
 
@@ -122,5 +156,7 @@ validate-smoke: ## Quick smoke test (for AI agent use)
 	$(OC) get csv -n $(OPERATOR_NS) 2>/dev/null | head -5 || echo "No CSV found"
 	@echo "Checking gateway pods..."
 	$(OC) get pods -n $(GATEWAY_NS) 2>/dev/null | head -10 || echo "No pods found"
+	@echo "Checking gateway route..."
+	$(OC) get route mcp-gateway -n $(GATEWAY_NS) 2>/dev/null || echo "No route found (loadbalancer exposure?)"
 	@echo "Checking k8s-mcp-server pods..."
 	$(OC) get pods -n $(K8S_MCP_NS) 2>/dev/null | head -5 || echo "No pods found"

@@ -6,17 +6,23 @@ alwaysApply: false
 
 # MCP Gateway CRD Conventions
 
-## API Versions (v1 — promoted from v1alpha1 in 0.8)
+## API Versions (RHCL operator 0.7.1 uses v1alpha1)
 
 ```yaml
-apiVersion: mcp.kuadrant.io/v1
+apiVersion: mcp.kuadrant.io/v1alpha1
 kind: MCPGatewayExtension
 ```
 
 ```yaml
-apiVersion: mcp.kuadrant.io/v1
+apiVersion: mcp.kuadrant.io/v1alpha1
 kind: MCPServerRegistration
 ```
+
+## Gateway listeners (dual-listener pattern — see ADR-0002)
+
+- `mcp`: public client traffic; `MCPGatewayExtension.spec.targetRef.sectionName: mcp`
+  - HTTP:8080 by default (POC); set `gateway.listeners.mcp.tls.enabled: true` for HTTPS:443 on the same listener (Option A)
+- `mcps`: internal backend routes; MCPServerRegistration HTTPRoutes use `sectionName: mcps` and `*.mcp.local` hostnames
 
 ## MCPGatewayExtension must target a Gateway
 

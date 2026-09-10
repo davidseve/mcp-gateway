@@ -1,9 +1,26 @@
-MCP Gateway deployed.
+MCP Gateway deployed (exposure: {{ .Values.exposure.mode }}).
 
 Gateway:  {{ .Values.gateway.name }}
-MCP Listener: port {{ .Values.gateway.listeners.mcp.port }}
+Listeners:
+{{- if or (eq .Values.exposure.mode "route") .Values.gateway.listeners.mcp.tls.enabled }}
+  - mcp:  https://{{ .Values.gateway.listeners.mcp.hostname }}:{{ .Values.gateway.listeners.mcp.tls.port }}
+{{- else }}
+  - mcp:  http://{{ .Values.gateway.listeners.mcp.hostname }}:{{ .Values.gateway.listeners.mcp.port }}
+{{- end }}
+  - mcps: {{ .Values.gateway.listeners.mcps.hostname }}:{{ .Values.gateway.listeners.mcps.port }} (internal)
+{{- if eq .Values.exposure.mode "route" }}
+
+Route:    {{ .Values.route.name }} ({{ .Values.route.tlsTermination }})
+URL:      https://{{ .Values.route.host | default .Values.gateway.listeners.mcp.hostname }}/mcp
+{{- else }}
+
+URL:      use Gateway ELB address (oc get gateway {{ .Values.gateway.name }} -n {{ .Release.Namespace }})
+{{- end }}
 
 Check status:
   oc get gateway {{ .Values.gateway.name }} -n {{ .Release.Namespace }}
   oc get mcpgatewayextension -n {{ .Release.Namespace }}
+{{- if eq .Values.exposure.mode "route" }}
+  oc get route {{ .Values.route.name }} -n {{ .Release.Namespace }}
+{{- end }}
   oc get pods -n {{ .Release.Namespace }}

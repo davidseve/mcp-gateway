@@ -3,14 +3,39 @@ gateway:
   namespace: gateway-system
 
 authPolicy:
-  enabled: false
+  enabled: true
   name: mcp-gateway-auth
   apiKey:
-    secretName: mcp-api-keys
-    secretLabel: "mcp.kuadrant.io/secret=true"
+    enabled: true
+    secretLabels: "mcp.kuadrant.io/secret=true"
 
 rateLimitPolicy:
-  enabled: false
+  enabled: true
   name: mcp-gateway-ratelimit
   limits:
     requestsPerMinute: 60
+    burst:
+      enabled: true
+      requestsPerSecond: 10
+    perIdentity:
+      enabled: false
+      requestsPerMinute: 30
+
+# MCPVirtualServer — curated tool subsets for different client profiles.
+# Each entry creates an MCPVirtualServer CR. Clients select a view via
+# X-Mcp-Virtualserver header. Empty list = no virtual servers (all tools visible).
+# Note: discovery-only filtering; does NOT block tools/call. For execution-level
+# filtering, combine with AuthPolicy wristband (Phase 5).
+virtualServers: []
+  # - name: k8s-readonly
+  #   description: "Read-only kubernetes tools for monitoring dashboards"
+  #   tools:
+  #     - k8s_pods_list
+  #     - k8s_events_list
+  #     - k8s_resources_list
+  # - name: k8s-debug
+  #   description: "Debugging tools for incident response"
+  #   tools:
+  #     - k8s_pods_log
+  #     - k8s_pods_get
+  #     - k8s_resources_get

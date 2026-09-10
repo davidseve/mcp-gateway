@@ -1,6 +1,7 @@
 """Test tools/list through the MCP Gateway."""
 
 import json
+import os
 import requests
 import pytest
 
@@ -13,7 +14,7 @@ def _parse_sse_json(text):
     return json.loads(text)
 
 
-def _mcp_request(url, method, params=None, session_id=None, host_header=None):
+def _mcp_request(url, method, params=None, session_id=None, host_header=None, api_key=None):
     """Send an MCP JSON-RPC request and return the response."""
     payload = {
         "jsonrpc": "2.0",
@@ -25,6 +26,8 @@ def _mcp_request(url, method, params=None, session_id=None, host_header=None):
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
     if session_id:
         headers["Mcp-Session-Id"] = session_id
     if host_header:
@@ -48,13 +51,13 @@ def _mcp_json(resp):
     return resp.json()
 
 
-def _init_session(url, host_header=None):
+def _init_session(url, host_header=None, api_key=None):
     """Initialize an MCP session and return (response_json, session_id)."""
     resp = _mcp_request(url, "initialize", {
         "protocolVersion": "2025-03-26",
         "capabilities": {},
         "clientInfo": {"name": "test", "version": "0.1.0"},
-    }, host_header=host_header)
+    }, host_header=host_header, api_key=api_key)
     session_id = resp.headers.get("Mcp-Session-Id")
     data = _mcp_json(resp)
     return data, session_id
@@ -82,13 +85,15 @@ class TestToolsListViaGateway:
 
     def test_tools_list_via_gateway(self, gateway_url, gateway_host_header):
         """Gateway aggregates tools with k8s_ prefix."""
-        _, session_id = _init_session(gateway_url, host_header=gateway_host_header)
+        api_key = os.environ.get("MCP_API_KEY")
+        _, session_id = _init_session(gateway_url, host_header=gateway_host_header, api_key=api_key)
         assert session_id, "Expected Mcp-Session-Id header in initialize response"
 
         resp = _mcp_request(
             gateway_url, "tools/list",
             session_id=session_id,
             host_header=gateway_host_header,
+            api_key=api_key,
         )
         result = _mcp_json(resp)
         assert "result" in result, f"Expected result key: {result}"

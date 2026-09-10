@@ -1,17 +1,46 @@
 global:
   clusterDomain: CHANGE_ME  # e.g. apps.cluster.example.com
 
+# External exposure strategy (see docs/adr/0003-gateway-exposure-strategy.md).
+# route: OpenShift Route + ClusterIP Service — DNS via *.apps wildcard (MaaS pattern).
+# loadbalancer: dedicated Gateway ELB — requires DNSPolicy or manual Route53 CNAME (Phase 3.2).
+exposure:
+  mode: route
+
 gateway:
   name: mcp-gateway
   gatewayClassName: openshift-default
+  # ClusterIP when exposure.mode=route; LoadBalancer when exposure.mode=loadbalancer.
+  serviceType: ClusterIP
   listeners:
+    # Public MCP client traffic. MCPGatewayExtension targets this listener (sectionName: mcp).
     mcp:
       hostname: mcp-gateway.CHANGE_ME
       port: 8080
       protocol: HTTP
+      tls:
+        enabled: true
+        port: 443
+        # route mode: ingress-certs (wildcard *.apps) synced from openshift-ingress by Makefile.
+        # loadbalancer mode: supply your own TLS Secret (e.g. cert-manager Certificate).
+        certificateSecret: ingress-certs
+    # Internal routing for MCPServerRegistration HTTPRoutes (*.mcp.local hostnames).
+    # See Kuadrant configure-mcp-gateway-listener-and-router.md and ADR-0002.
     mcps:
-      port: 8443
+      hostname: "*.mcp.local"
+      port: 8080
       protocol: HTTP
+  tls:
+    wildcardSecret:
+      name: ingress-certs
+      sourceNamespace: openshift-ingress
+
+route:
+  name: mcp-gateway
+  host: ""  # defaults to gateway.listeners.mcp.hostname
+  # passthrough: client TLS to Gateway (requires wildcard cert on listener).
+  # reencrypt: router terminates external TLS, re-encrypts to Gateway with service-ca.
+  tlsTermination: passthrough
 
 mcpGatewayExtension:
   name: mcp-gateway

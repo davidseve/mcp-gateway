@@ -9,10 +9,23 @@ spec:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: {{ .Values.gateway.name }}
-    namespace: {{ .Values.gateway.namespace }}
   limits:
     global:
       rates:
         - limit: {{ .Values.rateLimitPolicy.limits.requestsPerMinute }}
-          window: 1min
+          window: 1m
+    {{- if .Values.rateLimitPolicy.limits.burst.enabled }}
+    burst:
+      rates:
+        - limit: {{ .Values.rateLimitPolicy.limits.burst.requestsPerSecond }}
+          window: 1s
+    {{- end }}
+    {{- if .Values.rateLimitPolicy.limits.perIdentity.enabled }}
+    per-identity:
+      rates:
+        - limit: {{ .Values.rateLimitPolicy.limits.perIdentity.requestsPerMinute }}
+          window: 1m
+      counters:
+        - expression: auth.identity.username
+    {{- end }}
 {{- end }}

@@ -1,0 +1,14 @@
+{{- range .Values.virtualServers }}
+---
+apiVersion: mcp.kuadrant.io/v1alpha1
+kind: MCPVirtualServer
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  description: {{ .description | quote }}
+  tools:
+    {{- range .tools }}
+    - {{ . }}
+    {{- end }}
+{{- end }}

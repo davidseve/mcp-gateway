@@ -43,8 +43,8 @@ AI Agents (Cursor, LangGraph, etc.)
 | CRD | API Group | Purpose |
 |-----|-----------|---------|
 | Gateway | gateway.networking.k8s.io | Envoy ingress listener |
-| MCPGatewayExtension | mcp.kuadrant.io/v1 | Binds MCP broker to a Gateway |
-| MCPServerRegistration | mcp.kuadrant.io/v1 | Registers backend MCP server |
+| MCPGatewayExtension | mcp.kuadrant.io/v1alpha1 | Binds MCP broker to a Gateway |
+| MCPServerRegistration | mcp.kuadrant.io/v1alpha1 | Registers backend MCP server |
 | HTTPRoute | gateway.networking.k8s.io | Routes traffic to backend |
 | AuthPolicy | kuadrant.io | Auth on gateway (OAuth/API key) |
 | RateLimitPolicy | kuadrant.io | Rate limiting |
@@ -88,6 +88,7 @@ charts/
   policies/           - AuthPolicy + RateLimitPolicy
 tests/                - pytest: health, tools/list, auth policies
 docs/
+  architecture.md     - End-to-end architecture guide (charts, CRDs, traffic flows)
   adr/                - Architecture Decision Records
   versions.md         - Component version matrix
   ROADMAP.md          - Learning phases

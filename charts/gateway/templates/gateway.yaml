@@ -1,20 +1,35 @@
+{{- $routeMode := eq .Values.exposure.mode "route" }}
+{{- $tlsEnabled := or $routeMode .Values.gateway.listeners.mcp.tls.enabled }}
+{{- $certSecret := ternary .Values.gateway.tls.wildcardSecret.name .Values.gateway.listeners.mcp.tls.certificateSecret $routeMode }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: {{ .Values.gateway.name }}
   namespace: {{ .Release.Namespace }}
+  {{- if $routeMode }}
+  annotations:
+    networking.istio.io/service-type: {{ .Values.gateway.serviceType | default "ClusterIP" }}
+  {{- end }}
 spec:
   gatewayClassName: {{ .Values.gateway.gatewayClassName }}
   listeners:
     - name: mcp
-      hostname: {{ .Values.gateway.listeners.mcp.hostname }}
-      port: {{ .Values.gateway.listeners.mcp.port }}
-      protocol: {{ .Values.gateway.listeners.mcp.protocol }}
+      hostname: {{ .Values.gateway.listeners.mcp.hostname | quote }}
+      port: {{ if $tlsEnabled }}{{ .Values.gateway.listeners.mcp.tls.port }}{{ else }}{{ .Values.gateway.listeners.mcp.port }}{{ end }}
+      protocol: {{ if $tlsEnabled }}HTTPS{{ else }}{{ .Values.gateway.listeners.mcp.protocol }}{{ end }}
       allowedRoutes:
         namespaces:
           from: All
+      {{- if $tlsEnabled }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: {{ $certSecret | required "TLS certificate secret is required when TLS is enabled" }}
+      {{- end }}
     - name: mcps
-      hostname: "*.mcp.local"
+      hostname: {{ .Values.gateway.listeners.mcps.hostname | quote }}
       port: {{ .Values.gateway.listeners.mcps.port }}
       protocol: {{ .Values.gateway.listeners.mcps.protocol }}
       allowedRoutes:

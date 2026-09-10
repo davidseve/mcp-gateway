@@ -49,6 +49,10 @@ make deploy-policies          # Deploy auth + rate limit policies
 # Validate
 make test                     # Run all tests
 
+# Gateway URL (default: route mode — same pattern as rhoai-platform-ops MaaS)
+# https://mcp-gateway.apps.<cluster-domain>/mcp
+# Optional: GATEWAY_EXPOSURE=loadbalancer for dedicated ELB (Phase 3.2 — see ROADMAP)
+
 # Tear down
 make undeploy-all
 ```
@@ -75,14 +79,15 @@ docs/
 | CRD | API | Purpose |
 |-----|-----|---------|
 | Gateway | gateway.networking.k8s.io | Envoy ingress listener |
-| MCPGatewayExtension | mcp.kuadrant.io/v1 | Bind MCP broker to Gateway |
-| MCPServerRegistration | mcp.kuadrant.io/v1 | Register backend MCP server |
+| MCPGatewayExtension | mcp.kuadrant.io/v1alpha1 | Bind MCP broker to Gateway |
+| MCPServerRegistration | mcp.kuadrant.io/v1alpha1 | Register backend MCP server |
 | HTTPRoute | gateway.networking.k8s.io | Route to backend server |
 | AuthPolicy | kuadrant.io | Authentication (OAuth/API key) |
 | RateLimitPolicy | kuadrant.io | Rate limiting |
 
 ## Documentation
 
+- [Architecture guide](docs/architecture.md) — how charts, CRDs, operators, and traffic fit together
 - [Red Hat Connectivity Link 1.4 - MCP Gateway](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.4/pdf/mcp_gateway/)
 - [Installing MCP Gateway](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.3/html/installing_the_mcp_gateway/mcp-gateway-install)
 - [Registering MCP Servers and Policies](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.4/html/registering_mcp_servers_and_creating_policies/)
