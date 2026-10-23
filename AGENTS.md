@@ -1,7 +1,7 @@
 # AGENTS.md - MCP Gateway Learning Project
 
 > Single source of truth for AI-assisted development on this project.
-> Any AI tool (Cursor, Claude Code, etc.) working on this repo should read this file first.
+> Any AI coding agent (Claude Code, Codex, Cursor, etc.) working on this repo should read this file first.
 
 @docs/versions.md
 @README.md
@@ -120,3 +120,31 @@ For deploys and validates that take >30s, use `scripts/lib/agent-run.sh`:
 - [OCP 4.22 MCP Server + Gateway](https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/ai_applications/mcp-server)
 - [Kuadrant/mcp-gateway GitHub](https://github.com/Kuadrant/mcp-gateway)
 - [kubernetes-mcp-server GitHub](https://github.com/containers/kubernetes-mcp-server)
+
+## Always-on rules
+
+> Folded from tool-specific rule files so every agent applies them.
+
+### long-running-scripts (formerly `.cursor/rules/long-running-scripts.mdc`)
+
+### Long-Running Scripts
+
+For deploys and validates >30s, use `scripts/lib/agent-run.sh`:
+- `make deploy-quiet` wraps deploy via agent-run.sh
+- `make validate-smoke` runs quick health checks
+- Status in `.agent-status/`, logs in `.logs/`
+- Look for `AGENT_SCRIPT_DONE` sentinel in output
+- Do NOT poll full terminal output for long deploys
+
+
+## Path-scoped rules
+
+Before editing files matching these paths, read and follow the rule file (Cursor attaches them automatically; other agents must open them):
+
+| Paths | Rule file | About |
+|---|---|---|
+| `**/charts/**/*.yaml,**/charts/**/*.tpl,**/templates/**/*.yaml` | `.cursor/rules/helm-conventions.mdc` | Helm chart conventions for this project |
+| `**/charts/**/*.yaml,**/charts/**/*.tpl,**/templates/**/*.yaml` | `.cursor/rules/mcp-gateway-crds.mdc` | MCP Gateway CRD patterns and conventions |
+| `**/tests/**` | `.cursor/rules/testing.mdc` | Testing conventions for this project |
+| `**/charts/**/*.yaml, **/charts/**/*.tpl, **/templates/**/*.yaml` | `.claude/rules/helm-conventions.md` | Helm chart conventions for this project. |
+| `**/tests/**, **/*_test.py` | `.claude/rules/testing.md` | Testing conventions for this project. |
